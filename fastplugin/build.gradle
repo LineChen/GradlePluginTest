@@ -1,0 +1,21 @@
+apply plugin: 'java'
+apply plugin: 'groovy'
+apply plugin: 'maven'
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    compile 'com.android.tools.build:gradle:3.2.1'
+    compile 'org.javassist:javassist:3.20.0-GA'
+}
+
+group = 'com.line.fastplugin'
+version = '1.0.8-SNAPSHOT'
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri('../repo'))
+        }
+    }
+}

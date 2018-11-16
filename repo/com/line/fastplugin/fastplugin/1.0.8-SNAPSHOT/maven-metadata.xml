@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>com.line.fastplugin</groupId>
+  <artifactId>fastplugin</artifactId>
+  <version>1.0.8-SNAPSHOT</version>
+  <versioning>
+    <snapshot>
+      <timestamp>20181116.091538</timestamp>
+      <buildNumber>22</buildNumber>
+    </snapshot>
+    <lastUpdated>20181116091538</lastUpdated>
+  </versioning>
+</metadata>
