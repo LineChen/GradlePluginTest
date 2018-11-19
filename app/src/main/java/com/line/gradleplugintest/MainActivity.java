@@ -3,8 +3,8 @@ package com.line.gradleplugintest;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.widget.Toast;
 
+@FastApi
 public class MainActivity extends AppCompatActivity {
 
     @FastApi
@@ -22,14 +22,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void loadGirlApi(View view) {
-        Toast.makeText(this, girlApi.toString() + "akkkklj", Toast.LENGTH_SHORT).show();
+        girlApi.getGirl();
     }
 
     public void loadBoyApi(View view) {
-        Toast.makeText(this, boyApi.toString(), Toast.LENGTH_SHORT).show();
+        boyApi.getBoy();
     }
 
     public void loadErrorApi(View view) {
-        Toast.makeText(this, errorApi.toString(), Toast.LENGTH_SHORT).show();
+        errorApi.getBoy();
     }
 }

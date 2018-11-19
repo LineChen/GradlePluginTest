@@ -3,22 +3,24 @@ package com.line.fastplugin
 import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.utils.FileUtils
-import javassist.ClassPath
 import javassist.ClassPool
 import javassist.CtClass
 import javassist.CtField
 import javassist.bytecode.AnnotationsAttribute
+import javassist.bytecode.ClassFile
 import javassist.bytecode.FieldInfo
+import javassist.bytecode.annotation.Annotation
 import org.apache.commons.codec.digest.DigestUtils
 import org.gradle.api.Project
-
-import java.lang.annotation.Annotation
 
 class FastTransform extends Transform{
 
     protected ClassPool pool = ClassPool.getDefault()
 
-    Project project;
+    Project project
+
+    private static String ANNOTATION = "com.line.gradleplugintest.FastApi"
+    private static String HTTPCREATOR = "com.line.http.HttpCreator"
 
     FastTransform(Project project) {
         this.project = project
@@ -72,31 +74,34 @@ class FastTransform extends Transform{
             directoryInput.file.eachFileRecurse { File file ->
                 pool.insertClassPath(file.absolutePath)
                 if(file.isFile() && !file.getName().contains("R\$") && !file.getName().contains("R.class")){
-                    println('handleClass:' + file.getAbsolutePath())
+                    println('handleClass:' + file.absolutePath)
                     def classPath = file.absolutePath.replace(root, "")
                     def className =  classPath.replaceAll("/", ".").replace(".class", "").replaceFirst(".", "")
                     CtClass cc = pool.get(className)
                     if (cc.isFrozen()) {
                         cc.defrost()
                     }
-                    CtField[] declaredFields = cc.getFields()
-                    String annatationName = "com.line.gradleplugintest.FastApi"
-                    boolean modified = false
-                    declaredFields.each {CtField waitEditField->
-                        println(waitEditField.getName())
-                        if(hasAnnotation(waitEditField, annatationName)){
-                            String fieldType = waitEditField.getType().getName()
-                            String fieldName = waitEditField.getName()
-                            println("waitEditField:" + fieldType + "," +  fieldName)
-                            CtField substituteField = CtField.make(fieldType + " " + fieldName + " = new " + fieldType + "();", cc)
-                            cc.removeField(waitEditField)
-                            cc.addField(substituteField)
-                            modified = true
+
+                    if(hasAnnotation(cc, ANNOTATION)){
+                        CtField[] declaredFields = cc.getFields()
+                        boolean modified = false
+                        declaredFields.each {CtField waitEditField->
+                            if(hasAnnotation(waitEditField, ANNOTATION)){
+                                String fieldType = waitEditField.getType().getName()
+                                String fieldName = waitEditField.getName()
+                                println("waitEditField:" + fieldType + "," +  fieldName)
+                                String makeStr = fieldType + " " + fieldName + " = new " + HTTPCREATOR + "().create(" + fieldType + ".class);"
+                                CtField substituteField = CtField.make(makeStr, cc)
+                                cc.removeField(waitEditField)
+                                cc.addField(substituteField)
+                                modified = true
+                            }
                         }
-                    }
-                    if(modified){
-                        cc.writeFile(directoryInput.file.absolutePath)
-                        cc.detach()
+
+                        if(modified){
+                            cc.writeFile(directoryInput.file.absolutePath)
+                            cc.detach()
+                        }
                     }
                 }
             }
@@ -104,13 +109,22 @@ class FastTransform extends Transform{
     }
 
 
-    boolean hasAnnotation(CtField ctField, String annatationName){
+    static boolean hasAnnotation(CtClass ct, String typeName) {
+        ClassFile classFile = ct.getClassFile2()
+        AnnotationsAttribute a1 = (AnnotationsAttribute)classFile.getAttribute(AnnotationsAttribute.invisibleTag)
+        AnnotationsAttribute a2 = (AnnotationsAttribute)classFile.getAttribute(AnnotationsAttribute.visibleTag)
+        return hasAnnotation(typeName, a1, a2)
+    }
+
+    static boolean hasAnnotation(CtField ctField, String typeName){
         FieldInfo fi = ctField.getFieldInfo2()
         AnnotationsAttribute a1 = (AnnotationsAttribute)fi.getAttribute(AnnotationsAttribute.invisibleTag)
         AnnotationsAttribute a2 = (AnnotationsAttribute)fi.getAttribute(AnnotationsAttribute.visibleTag)
+        return hasAnnotation(typeName, a1, a2)
+    }
 
-        javassist.bytecode.annotation.Annotation[] anno1, anno2
-
+    static boolean hasAnnotation(String typeName, AnnotationsAttribute a1, AnnotationsAttribute a2) {
+        Annotation[] anno1, anno2
         if (a1 == null)
             anno1 = null
         else
@@ -121,7 +135,6 @@ class FastTransform extends Transform{
         else
             anno2 = a2.getAnnotations()
 
-        String typeName = annatationName
         if (anno1 != null)
             for (int i = 0; i < anno1.length; i++)
                 if (anno1[i].getTypeName().equals(typeName))
