@@ -1,4 +1,4 @@
-package com.line.http;
+package com.line.libuse.http;
 
 import android.util.Log;
 

@@ -3,6 +3,7 @@ package com.line.fastplugin
 import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.utils.FileUtils
+import com.google.common.collect.Sets
 import javassist.ClassPool
 import javassist.CtClass
 import javassist.CtField
@@ -19,8 +20,8 @@ class FastTransform extends Transform{
 
     Project project
 
-    private static String ANNOTATION = "com.line.gradleplugintest.FastApi"
-    private static String HTTPCREATOR = "com.line.http.HttpCreator"
+    private static String ANNOTATION = "com.line.libuse.api.FastApi"
+    private static String HTTPCREATOR = "com.line.libuse.http.HttpCreator"
 
     FastTransform(Project project) {
         this.project = project
@@ -38,6 +39,12 @@ class FastTransform extends Transform{
 
     @Override
     Set<? super QualifiedContent.Scope> getScopes() {
+        if(PluginUtils.isApplicationProject(project)){
+            return TransformManager.SCOPE_FULL_PROJECT
+        } else if(PluginUtils.isLibraryProject(project)){
+            return Sets.immutableEnumSet(
+                    QualifiedContent.Scope.PROJECT)
+        }
         return TransformManager.SCOPE_FULL_PROJECT
     }
 
@@ -55,16 +62,53 @@ class FastTransform extends Transform{
             // 借用JavaSsist 对文件夹的class 字节码 进行修改
             scanClasses(transformInvocation, input)
             // 对类型为jar的input进行遍历 : 对应三方库等
-            input.jarInputs.each { JarInput jarInput ->
-                def jarName = jarInput.name
-                def md5Name = DigestUtils.md5Hex(jarInput.file.getAbsolutePath())
-                if (jarName.endsWith('.jar')) {
-                    jarName = jarName.substring(0, jarName.length() - 4) // '.jar'.length == 4
-                }
-                File dest = transformInvocation.getOutputProvider().getContentLocation(jarName + md5Name, jarInput.contentTypes, jarInput.scopes, Format.JAR)
-                // 将输入内容复制到输出
-                FileUtils.copyFile(jarInput.file, dest)
+            scanJars(transformInvocation, input)
+        }
+    }
+
+    /**
+     * 扫码local classes，并加入ClassPool的classpath
+     */
+    protected void scanClasses(TransformInvocation invocation, TransformInput input) {
+        input.directoryInputs.each { DirectoryInput directoryInput ->
+            if (directoryInput.file.isDirectory()) {
+                println "【 directoryInput.file 】" + directoryInput.file
+                pool.appendClassPath(getAndroidJarPath())
+                def root = directoryInput.file.absolutePath
+                pool.insertClassPath(root)
             }
+            handleClass(invocation,directoryInput)
+            //处理完输入文件之后，要把输出给下一个任务
+            def dest = invocation.outputProvider.getContentLocation(directoryInput.name, directoryInput.contentTypes, directoryInput.scopes, Format.DIRECTORY)
+            FileUtils.copyDirectory(directoryInput.file, dest)
+        }
+    }
+
+    /**
+     * 扫码jar，并加入ClassPool的classpath
+     */
+    protected void scanJars(TransformInvocation invocation, TransformInput input) {
+        input.jarInputs.each { JarInput jarInput ->
+            println "【 jarInput.file 】" + jarInput.file.getAbsolutePath()
+            pool.insertClassPath(jarInput.file.getAbsolutePath())
+            if (jarInput.file.getAbsolutePath().endsWith(".jar")) {
+                // ...对jar进行插入字节码
+                if(jarInput.file.absolutePath.startsWith(project.rootDir.absolutePath)){
+//                    jarInput.file.eachFileRecurse {File file ->
+//                        println("===IN JAR:" + file.absolutePath)
+//                    }
+                }
+            }
+            /**
+             * 重名输出文件,因为可能同名,会覆盖
+             */
+            def jarName = jarInput.name
+            def md5Name = DigestUtils.md5Hex(jarInput.file.getAbsolutePath())
+            if (jarName.endsWith(".jar")) {
+                jarName = jarName.substring(0, jarName.length() - 4)
+            }
+            def dest = invocation.outputProvider.getContentLocation(jarName + md5Name, jarInput.contentTypes, jarInput.scopes, Format.JAR)
+            FileUtils.copyFile(jarInput.file, dest)
         }
     }
 
@@ -150,23 +194,7 @@ class FastTransform extends Transform{
 
 
 
-    /**
-     * 扫码local classes，并加入ClassPool的classpath
-     */
-    protected void scanClasses(TransformInvocation invocation, TransformInput input) {
-        input.directoryInputs.each { DirectoryInput directoryInput ->
-            if (directoryInput.file.isDirectory()) {
-                println "【 directoryInput.file 】" + directoryInput.file
-                pool.appendClassPath(getAndroidJarPath())
-                def root = directoryInput.file.absolutePath
-                pool.insertClassPath(root)
-            }
-            handleClass(invocation,directoryInput)
-            //处理完输入文件之后，要把输出给下一个任务
-            def dest = invocation.outputProvider.getContentLocation(directoryInput.name, directoryInput.contentTypes, directoryInput.scopes, Format.DIRECTORY)
-            FileUtils.copyDirectory(directoryInput.file, dest)
-        }
-    }
+
 
     protected String getAndroidJarPath() {
         def rootDir = project.rootDir

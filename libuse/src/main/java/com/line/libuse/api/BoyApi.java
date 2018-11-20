@@ -1,4 +1,4 @@
-package com.line.gradleplugintest;
+package com.line.libuse.api;
 
 /**
  * Created by line on 2018/11/16.
