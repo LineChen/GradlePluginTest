@@ -1,10 +1,10 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.line.fastplugin'
-
-fast{
-    name = 'Gradle Plugin ....'
-    version = '1.0.2'
-}
+//apply plugin: 'com.line.fastplugin'
+//
+//fast{
+//    name = 'Gradle Plugin ....'
+//    version = '1.0.2'
+//}
 
 
 android {

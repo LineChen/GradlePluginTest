@@ -1,0 +1,9 @@
+apply plugin: 'java-library'
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'org.javassist:javassist:3.20.0-GA'
+}
+
+sourceCompatibility = "1.7"
+targetCompatibility = "1.7"

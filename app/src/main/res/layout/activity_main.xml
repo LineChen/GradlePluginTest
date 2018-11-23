@@ -10,7 +10,7 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="boyApi"
+        android:text="testMain->boyApi"
         android:textAllCaps="false"
         android:onClick="loadBoyApi"
         />
@@ -18,11 +18,39 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="girlApi"
+        android:text="testMain->girlApi"
         android:textAllCaps="false"
         android:onClick="loadGirlApi"
         />
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="10dp"
+        android:background="@color/colorPrimary"/>
+
+
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="testLib->boyApi"
+        android:textAllCaps="false"
+        android:onClick="libLoadBoyApi"
+        />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="testLib->girlApi"
+        android:textAllCaps="false"
+        android:onClick="libLoadGirlApi"
+        />
+
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="10dp"
+        android:background="@color/colorPrimary"/>
 
     <Button
         android:layout_width="wrap_content"

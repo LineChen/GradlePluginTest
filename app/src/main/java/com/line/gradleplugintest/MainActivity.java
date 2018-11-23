@@ -30,15 +30,23 @@ public class MainActivity extends AppCompatActivity {
 
     public void loadGirlApi(View view) {
         girlApi.getGirl();
-        testLibUse.loadGirlApi();
     }
+
 
     public void loadBoyApi(View view) {
         boyApi.getBoy();
-        testLibUse.loadBoyApi();
+
     }
 
     public void loadErrorApi(View view) {
         errorApi.getBoy();
+    }
+
+    public void libLoadBoyApi(View view) {
+        testLibUse.loadGirlApi();
+    }
+
+    public void libLoadGirlApi(View view) {
+        testLibUse.loadBoyApi();
     }
 }

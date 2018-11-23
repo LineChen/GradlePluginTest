@@ -5,21 +5,53 @@ import com.android.build.gradle.LibraryPlugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.PluginContainer
 
-class PluginUtils{
+import java.util.jar.JarEntry
+import java.util.jar.JarFile
 
-    static boolean isApplicationProject(Project project){
+class PluginUtils {
+
+    static boolean isApplicationProject(Project project) {
         PluginContainer pluginContainer = project.getPlugins()
-        if(pluginContainer.hasPlugin(AppPlugin)){
+        if (pluginContainer.hasPlugin(AppPlugin)) {
             return true
         }
         return false
     }
 
-    static boolean isLibraryProject(Project project){
+    static boolean isLibraryProject(Project project) {
         PluginContainer pluginContainer = project.getPlugins()
-        if(pluginContainer.hasPlugin(LibraryPlugin)){
+        if (pluginContainer.hasPlugin(LibraryPlugin)) {
             return true
         }
         return false
+    }
+
+
+    static List<String> getJarClassNames(String jarFilePath) throws IOException {
+        List<String> result = new ArrayList<>()
+
+        JarFile jf = new JarFile(new File(jarFilePath))
+
+        Enumeration<JarEntry> enume = jf.entries()
+        while (enume.hasMoreElements()) {
+            JarEntry element = enume.nextElement()
+            String name = element.getName()
+            if (name.toUpperCase().endsWith(".CLASS")) {
+                result.add(name.replace("/", ".").replace(".class", ""))
+            }
+        }
+        return result
+    }
+
+    static void deleteFile(String path) {
+        File file = new File(path)
+        if (file.isDirectory()) {
+            String[] childs = file.list()
+            for (int i = 0; i < childs.length; i++) {
+                String p = path + "/" + childs[i]
+                deleteFile(p)
+            }
+        }
+        file.delete()
     }
 }

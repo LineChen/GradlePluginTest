@@ -42,8 +42,7 @@ class FastTransform extends Transform{
         if(PluginUtils.isApplicationProject(project)){
             return TransformManager.SCOPE_FULL_PROJECT
         } else if(PluginUtils.isLibraryProject(project)){
-            return Sets.immutableEnumSet(
-                    QualifiedContent.Scope.PROJECT)
+            return Sets.immutableEnumSet(QualifiedContent.Scope.SUB_PROJECTS)
         }
         return TransformManager.SCOPE_FULL_PROJECT
     }
@@ -77,7 +76,7 @@ class FastTransform extends Transform{
                 def root = directoryInput.file.absolutePath
                 pool.insertClassPath(root)
             }
-            handleClass(invocation,directoryInput)
+            handleClassFileInput(invocation,directoryInput)
             //处理完输入文件之后，要把输出给下一个任务
             def dest = invocation.outputProvider.getContentLocation(directoryInput.name, directoryInput.contentTypes, directoryInput.scopes, Format.DIRECTORY)
             FileUtils.copyDirectory(directoryInput.file, dest)
@@ -91,14 +90,57 @@ class FastTransform extends Transform{
         input.jarInputs.each { JarInput jarInput ->
             println "【 jarInput.file 】" + jarInput.file.getAbsolutePath()
             pool.insertClassPath(jarInput.file.getAbsolutePath())
+
+
+            boolean modified = false
+            String nJarname = "n-" + jarInput.file.getName()
+            String outputJar = jarInput.file.getParent() + "/" + nJarname
+
+
             if (jarInput.file.getAbsolutePath().endsWith(".jar")) {
                 // ...对jar进行插入字节码
                 if(jarInput.file.absolutePath.startsWith(project.rootDir.absolutePath)){
-//                    jarInput.file.eachFileRecurse {File file ->
-//                        println("===IN JAR:" + file.absolutePath)
-//                    }
+                    println("【handle Jar】" + jarInput.file.absolutePath)
+                    List<String> classNames = PluginUtils.getJarClassNames(jarInput.file.absolutePath)
+                    String tmpDir = jarInput.file.getParent() + "/tmp" + System.currentTimeMillis() + "/"
+                    for (String className : classNames) {
+                        CtClass cc = pool.get(className)
+                        if (cc.isFrozen()) {
+                            cc.defrost()
+                        }
+                        if(hasAnnotation(cc, ANNOTATION)){
+                            CtField[] declaredFields = cc.getFields()
+                            declaredFields.each {CtField waitEditField->
+                                if(hasAnnotation(waitEditField, ANNOTATION)){
+                                    String fieldType = waitEditField.getType().getName()
+                                    String fieldName = waitEditField.getName()
+                                    println("waitEditField:" + fieldType + "," +  fieldName)
+                                    String makeStr = fieldType + " " + fieldName + " = new " + HTTPCREATOR + "().create(" + fieldType + ".class);"
+                                    CtField substituteField = CtField.make(makeStr, cc)
+                                    cc.removeField(waitEditField)
+                                    cc.addField(substituteField)
+                                    modified = true
+                                }
+                            }
+                        }
+                        cc.writeFile(tmpDir)
+                    }
+
+
+                    if(modified){
+                        File tmpFile = new File(tmpDir);
+                        String execDes = "jar cvf " +  outputJar + " -C " + tmpDir + " .";
+                        if(tmpFile.exists()){
+                            Runtime rt = Runtime.getRuntime();
+                            rt.exec(execDes);
+                        }
+                    }
+
                 }
             }
+
+//            Thread.sleep(1000)
+
             /**
              * 重名输出文件,因为可能同名,会覆盖
              */
@@ -108,11 +150,30 @@ class FastTransform extends Transform{
                 jarName = jarName.substring(0, jarName.length() - 4)
             }
             def dest = invocation.outputProvider.getContentLocation(jarName + md5Name, jarInput.contentTypes, jarInput.scopes, Format.JAR)
-            FileUtils.copyFile(jarInput.file, dest)
+            File newJarFile = new File(outputJar)
+            if(modified){
+                while (true){
+                    if(newJarFile.exists() && newJarFile.length() > 0){
+                        FileUtils.copyFile(newJarFile, dest)
+                        println("====copy edited jar : ==from=="+ outputJar + "==to==" + dest.absolutePath)
+                        break
+                    }
+                }
+            } else {
+                FileUtils.copyFile(jarInput.file, dest)
+                println("====copy origin jar : ==from=="+ jarInput.file + "==to==" + dest.absolutePath)
+            }
+//            if(newJarFile.exists()){
+//                FileUtils.copyFile(newJarFile, dest)
+//                println("====copy edited jar : ==from=="+ outputJar + "==to==" + dest.absolutePath)
+//            } else {
+//                FileUtils.copyFile(jarInput.file, dest)
+//                println("====copy origin jar : ==from=="+ jarInput.file + "==to==" + dest.absolutePath)
+//            }
         }
     }
 
-    protected void handleClass(TransformInvocation invocation, DirectoryInput directoryInput) {
+    protected void handleClassFileInput(TransformInvocation invocation, DirectoryInput directoryInput) {
         if(directoryInput.file.isDirectory()){
             def root = directoryInput.file.absolutePath
             directoryInput.file.eachFileRecurse { File file ->

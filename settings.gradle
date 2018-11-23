@@ -1,1 +1,1 @@
-include ':app', ':fastplugin', ':libuse'
+include ':app', ':fastplugin', ':libuse', ':parsejar'
