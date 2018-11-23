@@ -102,6 +102,7 @@ class FastTransform extends Transform{
                 if(jarInput.file.absolutePath.startsWith(project.rootDir.absolutePath)){
                     println("【handle Jar】" + jarInput.file.absolutePath)
                     List<String> classNames = PluginUtils.getJarClassNames(jarInput.file.absolutePath)
+                    println(Arrays.toString(classNames.toArray()))
                     String tmpDir = jarInput.file.getParent() + "/tmp" + System.currentTimeMillis() + "/"
                     for (String className : classNames) {
                         CtClass cc = pool.get(className)
@@ -152,6 +153,7 @@ class FastTransform extends Transform{
             def dest = invocation.outputProvider.getContentLocation(jarName + md5Name, jarInput.contentTypes, jarInput.scopes, Format.JAR)
             File newJarFile = new File(outputJar)
             if(modified){
+                Thread.sleep(1000)
                 while (true){
                     if(newJarFile.exists() && newJarFile.length() > 0){
                         FileUtils.copyFile(newJarFile, dest)
