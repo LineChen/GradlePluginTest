@@ -94,7 +94,7 @@ class FastTransform extends Transform{
 
             boolean modified = false
             String nJarname = "n-" + jarInput.file.getName()
-            String outputJar = jarInput.file.getParent() + "/" + nJarname
+            String outputJar = jarInput.file.getParent() + "/" + nJarname + ".jar"
 
 
             if (jarInput.file.getAbsolutePath().endsWith(".jar")) {
