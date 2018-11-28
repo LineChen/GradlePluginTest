@@ -18,6 +18,6 @@ public class GenerateJarUtil {
 
         CompilerAndJarTools cl = new CompilerAndJarTools(javaSourcePath, javaClassPath, targetPath);
         cl.complier();
-        cl.generateJar();
+//        cl.generateJar();
     }
 }

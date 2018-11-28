@@ -43,15 +43,17 @@ class PluginUtils {
         return result
     }
 
-    static void deleteFile(String path) {
-        File file = new File(path)
-        if (file.isDirectory()) {
-            String[] childs = file.list()
+    static void deleteFile(String path){
+        File file = new File(path);
+        if(file.isDirectory()){
+            String[] childs = file.list();
             for (int i = 0; i < childs.length; i++) {
-                String p = path + "/" + childs[i]
-                deleteFile(p)
+
+                String p = path + "/" + childs[i];
+                System.out.println("delete:" + p);
+                deleteFile(p);
             }
         }
-        file.delete()
+        file.delete();
     }
 }

@@ -75,6 +75,7 @@ public class JarUtil {
                 zos.write(buf, 0, len);
             }
             // Complete the entry
+            zos.flush();
             zos.closeEntry();
             in.close();
         } else {

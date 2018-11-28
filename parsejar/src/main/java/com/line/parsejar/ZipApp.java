@@ -3,7 +3,7 @@ package com.line.parsejar;
 public class ZipApp {
 
 	public static void main(String[] args) throws Exception {
-		String buildRootDir = "/Users/chenliu/studyApp/GradlePluginTest/parsejar/classes/";
+		String buildRootDir = "/Users/chenliu/studyApp/GradlePluginTest/parsejar/classes";
 		
 		String outFile = "/Users/chenliu/studyApp/GradlePluginTest/parsejar/target/target.jar";
 		
@@ -14,7 +14,9 @@ public class ZipApp {
 		//解压缩
 //		ZipUtil.decompress(outFile, "/Users/chenliu/eclipse-workspace/");
 
-		JarUtil.toJar(buildRootDir, outFile);
+//		JarUtil.toJar(buildRootDir, outFile);
+
+		FileUtils.deleteFile(buildRootDir);
 
 	}
 
