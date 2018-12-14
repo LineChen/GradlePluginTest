@@ -55,33 +55,44 @@ class FastTransform extends Transform {
 
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
-        //transformInvocation.inputs 有两种类型，一种是目录，一种是jar包 分开对其进行遍历
         transformInvocation.inputs.each { TransformInput input ->
-            // 对类型为文件夹 的input进行遍历 ：对应的class字节码文件
-            // 借用JavaSsist 对文件夹的class 字节码 进行修改
-            scanClasses(transformInvocation, input)
-            // 对类型为jar的input进行遍历 : 对应三方库等
-            scanJars(transformInvocation, input)
+            scanForLoad(input)
+        }
+
+        transformInvocation.inputs.each { TransformInput input ->
+            scanForHandle(transformInvocation, input)
         }
     }
 
-    /**
-     * 扫码local classes，并加入ClassPool的classpath
-     */
-    protected void scanClasses(TransformInvocation invocation, TransformInput input) {
+    private void scanForLoad(TransformInput input) {
         input.directoryInputs.each { DirectoryInput directoryInput ->
             if (directoryInput.file.isDirectory()) {
-                println "【 directoryInput.file 】" + directoryInput.file
                 pool.appendClassPath(getAndroidJarPath())
                 def root = directoryInput.file.absolutePath
                 pool.insertClassPath(root)
             }
+        }
+
+        input.jarInputs.each { JarInput jarInput ->
+            pool.insertClassPath(jarInput.file.getAbsolutePath())
+        }
+    }
+
+
+    private void scanForHandle(TransformInvocation invocation, TransformInput input) {
+        scanJars(invocation, input)
+        scanClasses(invocation, input)
+    }
+
+    protected void scanClasses(TransformInvocation invocation, TransformInput input) {
+        input.directoryInputs.each { DirectoryInput directoryInput ->
             handleClassFileInput(invocation, directoryInput)
             //处理完输入文件之后，要把输出给下一个任务
             def dest = invocation.outputProvider.getContentLocation(directoryInput.name, directoryInput.contentTypes, directoryInput.scopes, Format.DIRECTORY)
             FileUtils.copyDirectory(directoryInput.file, dest)
         }
     }
+
 
     /**
      * 扫码jar，并加入ClassPool的classpath
